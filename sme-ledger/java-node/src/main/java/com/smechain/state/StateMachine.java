@@ -9,6 +9,11 @@ public final class StateMachine {
     private StateMachine(){}
 
     public static void apply(State state, Transaction tx) throws StateTransitionException {
+        String senderId = tx.senderBusinessId();
+        long expectedNonce = state.senderNonces.getOrDefault(senderId, 0L);
+        if (tx.nonce != expectedNonce) {
+            throw new StateTransitionException("invalid nonce: expected " + expectedNonce + " got " + tx.nonce);
+        }
         switch (tx.type) {
             case ISSUE_INVOICE -> applyIssue(state, tx);
             case ACCEPT_INVOICE -> applyAccept(state, tx);
@@ -19,6 +24,7 @@ public final class StateMachine {
             case RESOLVE_DISPUTE -> applyResolveDispute(state, tx);
             default -> { /* ignore for v1 state */ }
         }
+        state.senderNonces.put(senderId, expectedNonce + 1);
     }
 
     private static void applyIssue(State st, Transaction tx) throws StateTransitionException {
@@ -98,15 +104,19 @@ public final class StateMachine {
     }
 
     private static void applyResolveDispute(State st, Transaction tx) throws StateTransitionException {
-        // v1: simple "arbiter" = any miner can resolve, but must include outcome (issuer_wins/counterparty_wins/split)
-        // v2: replace with arbitration committee / staking.
         String invoiceId = (String)tx.payload.get("invoiceId");
         String outcome = (String)tx.payload.get("outcome");
         InvoiceRecord r = requireInvoice(st, invoiceId);
         if (r.status != InvoiceStatus.DISPUTED) throw new StateTransitionException("invoice not disputed");
         if (outcome == null || outcome.isBlank()) throw new StateTransitionException("outcome required");
+        java.util.List<String> allowed = java.util.List.of("issuer_wins", "counterparty_wins", "mutual_agreement");
+        if (!allowed.contains(outcome)) throw new StateTransitionException("outcome must be one of: " + allowed);
+        String resolver = tx.senderBusinessId();
+        if (resolver.equals(r.issuerBusinessId)) throw new StateTransitionException("issuer cannot resolve own dispute");
+        if (resolver.equals(r.counterpartyBusinessId)) throw new StateTransitionException("counterparty cannot resolve own dispute");
         r.status = InvoiceStatus.RESOLVED;
         r.disputeOutcome = outcome;
+        r.resolverBusinessId = resolver;
     }
 
     private static InvoiceRecord requireInvoice(State st, String invoiceId) throws StateTransitionException {

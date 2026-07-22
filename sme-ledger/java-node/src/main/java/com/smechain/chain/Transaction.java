@@ -16,6 +16,7 @@ public class Transaction {
     public TxType type;
     public long timestampEpochSec;
     public long feeMicrounits;
+    public long nonce;
 
     // sender identity
     public String senderPubKeyB64;
@@ -25,11 +26,16 @@ public class Transaction {
     public Map<String, Object> payload;
 
     public static Transaction unsigned(TxType type, Map<String, Object> payload, long ts, long feeMicrounits, PublicKey sender) {
+        return unsigned(type, payload, ts, feeMicrounits, 0L, sender);
+    }
+
+    public static Transaction unsigned(TxType type, Map<String, Object> payload, long ts, long feeMicrounits, long nonce, PublicKey sender) {
         Transaction tx = new Transaction();
         tx.type = type;
         tx.payload = payload;
         tx.timestampEpochSec = ts;
         tx.feeMicrounits = feeMicrounits;
+        tx.nonce = nonce;
         tx.senderPubKeyB64 = java.util.Base64.getEncoder().encodeToString(sender.getEncoded());
         tx.txId = tx.computeTxId();
         return tx;
@@ -58,13 +64,14 @@ public class Transaction {
         return KeyUtil.businessIdFromPubKey(pk);
     }
 
-    private byte[] canonicalBytesForSigning() {
+    public byte[] canonicalBytesForSigning() {
         // Do NOT include signature itself.
         try {
             Map<String,Object> m = Map.of(
                     "type", type.toString(),
                     "timestampEpochSec", timestampEpochSec,
                     "feeMicrounits", feeMicrounits,
+                    "nonce", nonce,
                     "senderPubKeyB64", senderPubKeyB64,
                     "payload", payload
             );
@@ -76,8 +83,15 @@ public class Transaction {
 
     public String computeTxId() {
         try {
-            // txid includes signature if present
-            byte[] b = CanonicalJson.MAPPER.writeValueAsBytes(this);
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("type", type == null ? null : type.toString());
+            m.put("timestampEpochSec", timestampEpochSec);
+            m.put("feeMicrounits", feeMicrounits);
+            m.put("nonce", nonce);
+            m.put("senderPubKeyB64", senderPubKeyB64);
+            m.put("signatureB64", signatureB64);
+            m.put("payload", payload);
+            byte[] b = CanonicalJson.MAPPER.writeValueAsBytes(m);
             return HashUtil.toHex(HashUtil.sha256(b));
         } catch (Exception e) {
             throw new RuntimeException(e);

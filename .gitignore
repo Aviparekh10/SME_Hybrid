@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Java / Gradle build artifacts
+**/build/
+**/bin/
+**/.gradle/
+**/*.class
+
+# IDE
+.vscode/
+**/.classpath
+**/.project
+
+# Node data / secrets generated at runtime
+**/data/
+**/admin.key
+**/genesis-keypair.json
+**/*-keypair.json
+**/smoke-data/
+**/race-smoke-data*/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/.venv/
+
+# Misc local artifacts
+sme-ledger/.Rhistory

@@ -17,7 +17,7 @@ public final class Merkle {
             List<String> next = new ArrayList<>();
             for (int i = 0; i < level.size(); i += 2) {
                 String left = level.get(i);
-                String right = (i + 1 < level.size()) ? level.get(i+1) : left;
+                String right = (i + 1 < level.size()) ? level.get(i+1) : HashUtil.sha256Hex("");
                 next.add(HashUtil.sha256Hex(left + right));
             }
             level = next;

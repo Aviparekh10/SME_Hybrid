@@ -26,5 +26,17 @@ public class Mempool {
         return all.subList(0, max);
     }
 
+    public List<String> evictOlderThan(long ttlSeconds) {
+        long cutoff = Instant.now().getEpochSecond() - ttlSeconds;
+        List<String> evicted = new ArrayList<>();
+        seenAt.forEach((id, t) -> {
+            if (t < cutoff) {
+                evicted.add(id);
+            }
+        });
+        removeAll(evicted);
+        return evicted;
+    }
+
     public int size() { return txs.size(); }
 }

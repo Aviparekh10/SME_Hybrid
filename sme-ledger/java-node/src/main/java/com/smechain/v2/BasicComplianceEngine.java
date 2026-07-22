@@ -15,8 +15,11 @@ public class BasicComplianceEngine implements ComplianceEngine {
         // Example checks: reject huge invoices unless KYC attested (simplified).
         if (tx.type == TxType.ISSUE_INVOICE) {
             Object amt = tx.payload.get("amountCents");
-            if (amt instanceof Number n && n.longValue() > maxAmountCents) {
-                return "amount_exceeds_limit_needs_kyc";
+            if (amt instanceof Number) {
+                Number n = (Number) amt;
+                if (n.longValue() > maxAmountCents) {
+                    return "amount_exceeds_limit_needs_kyc";
+                }
             }
         }
         return null;

@@ -1,5 +1,8 @@
 package com.smechain.crypto;
 
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+
 import java.security.*;
 import java.security.spec.*;
 import java.util.Base64;
@@ -67,9 +70,12 @@ public final class KeyUtil {
     }
 
     public static String businessIdFromPubKey(PublicKey pk) {
-        // business id = RIPEMD160(SHA256(pubkey)) in Bitcoin style;
-        // we keep it simple: SHA256 hex truncated
-        String h = HashUtil.toHex(HashUtil.sha256(pk.getEncoded()));
-        return h.substring(0, 40);
+        // RIPEMD160(SHA256(pubkey)) — Bitcoin-style address derivation.
+        byte[] sha256 = HashUtil.sha256(pk.getEncoded());
+        Digest digest = new RIPEMD160Digest();
+        digest.update(sha256, 0, sha256.length);
+        byte[] out = new byte[20];
+        digest.doFinal(out, 0);
+        return HashUtil.toHex(out);
     }
 }
