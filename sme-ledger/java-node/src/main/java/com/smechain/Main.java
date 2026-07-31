@@ -25,7 +25,6 @@ public class Main {
         String validatorsArg = parsed.getOrDefault("--validators", "");
         String validatorKeystore = parsed.getOrDefault("--validatorKeystore", "");
         String validatorAlias = parsed.getOrDefault("--validatorAlias", "");
-        boolean disableAutoProduce = Boolean.parseBoolean(parsed.getOrDefault("--disableAutoProduce", "false"));
         List<String> peers = peersArg.isBlank() ? List.of() : Arrays.asList(peersArg.split(","));
         Path dataPath = Path.of(dataDir);
 
@@ -63,12 +62,8 @@ public class Main {
         RestServer rest = new RestServer(port, node, peerManager, p2pServer, dataPath, poaConfig, validatorKeyPair.getPrivate(), validatorKeyPair.getPublic());
         rest.start();
 
-        if (disableAutoProduce) {
-            System.out.println("Auto block production disabled via --disableAutoProduce.");
-        } else {
-            PoaScheduler scheduler = new PoaScheduler(node, p2pServer, poaConfig, validatorKeyPair.getPrivate(), validatorKeyPair.getPublic());
-            scheduler.start();
-        }
+        PoaScheduler scheduler = new PoaScheduler(node, p2pServer, poaConfig, validatorKeyPair.getPrivate(), validatorKeyPair.getPublic());
+        scheduler.start();
 
         System.out.println("Node running. REST http://localhost:" + port + "  P2P :" + p2pPort);
     }
