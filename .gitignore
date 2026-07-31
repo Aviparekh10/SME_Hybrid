@@ -26,4 +26,9 @@
 **/.venv/
 
 # Misc local artifacts
-sme-ledger/.Rhistory
+**/.Rhistory
+sme-ledger/java-node/Task
+
+# Local-only documents and archives
+/SME Blockchain Background/
+/sme-ledger/Avi's WorkFiles.zip
